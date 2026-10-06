@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Золотой ключик</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Comic Sans MS', 'Marker Felt', cursive;
+    background: linear-gradient(180deg, #ffe9a8 0%, #ffd27a 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    user-select: none;
+  }
+  h1 {
+    color: #b8860b;
+    text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(0,0,0,0.1);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+  }
+  .hint {
+    color: #6b4a10;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  /* СЦЕНА */
+  .scene {
+    position: relative;
+    width: 700px;
+    max-width: 95vw;
+    height: 420px;
+    background: linear-gradient(180deg, #fff4d6 0%, #ffe4a8 70%, #c98a4b 70%, #a06a35 100%);
+    border: 6px solid #8b5a2b;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+
+  /* СТЕНА С ОБОЯМИ */
+  .wall {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 70%;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 40px, rgba(255,255,255,0.3) 40px 42px),
+      repeating-linear-gradient(0deg, transparent 0 40px, rgba(255,255,255,0.3) 40px 42px),
+      #ffd98a;
+  }
+
+  /* ДВЕРЬ */
+  .door-frame {
+    position: absolute;
+    right: 60px;
+    bottom: 30%;
+    width: 160px;
+    height: 260px;
+    background: #5a3a1a;
+    border-radius: 8px 8px 0 0;
+    padding: 8px;
+  }
+  .door {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #8b5a2b, #a06a35, #8b5a2b);
+    border-radius: 4px 4px 0 0;
+    transform-origin: left center;
+    transition: transform 1.5s ease-in-out;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+  }
+  .door.open {
+    transform: perspective(800px) rotateY(-75deg);
+  }
+  .door::before, .door::after {
+    content: '';
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    height: 35%;
+    border: 3px solid #5a3a1a;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.08);
+  }
+  .door::before { top: 8%; }
+  .door::after { bottom: 8%; }
+
+  .lock {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 28px;
+    background: #222;
+    border-radius: 50% 50% 4px 4px;
+    border: 2px solid #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lock::after {
+    content: '';
+    width: 4px;
+    height: 10px;
+    background: #000;
+    border-radius: 2px;
+  }
+
+  /* ЗА КЛЮЧОМ — КОМНАТА */
+  .room-behind {
+    position: absolute;
+    right: 60px;
+    bottom: 30%;
+    width: 160px;
+    height: 260px;
+    background: radial-gradient(circle at 50% 40%, #fff8dc, #d4a574);
+    border-radius: 8px 8px 0 0;
+    z-index: -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3em;
+  }
+
+  /* КЛЮЧ */
+  .key {
+    position: absolute;
+    left: 80px;
+    bottom: 18%;
+    font-size: 3.5em;
+    cursor: pointer;
+    transition: all 1s ease-in-out;
+    filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3));
+    z-index: 5;
+  }
+  .key.lifted {
+    left: 250px;
+    bottom: 55%;
+    font-size: 2.5em;
+  }
+  .key.in-lock {
+    right: 82px;
+    left: auto;
+    bottom: calc(30% + 130px - 14px);
+    font-size: 1.8em;
+    transform: rotate(-90deg);
+  }
+  .key:hover:not(.in-lock) {
+    transform: scale(1.1) rotate(-10deg);
+  }
+
+  /* ОБЛАЧКО С ЗАДАЧЕЙ */
+  .task-box {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 4px solid #ff8c42;
+    border-radius: 20px;
+    padding: 15px 25px;
+    box-shadow: 0 6px 0 #d96a1f;
+    text-align: center;
+    min-width: 300px;
+    z-index: 10;
+  }
+  .task-box::after {
+    content: '';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 18px solid #ff8c42;
+  }
+  .task-text {
+    font-size: 1.3em;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  .task-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .task-input {
+    font-size: 1.2em;
+    padding: 6px 12px;
+    border: 3px solid #ff8c42;
+    border-radius: 10px;
+    width: 100px;
+    text-align: center;
+    font-family: inherit;
+    outline: none;
+  }
+  .task-input:focus { border-color: #d96a1f; }
+  .task-btn {
+    font-size: 1.1em;
+    padding: 8px 18px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 0 #2e7d32;
+    transition: transform 0.1s;
+  }
+  .task-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2e7d32;
+  }
+
+  /* КНОПКА-ПОДСКАЗКА 💡 */
+  .hint-btn {
+    font-size: 1.6em;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid #f9a825;
+    background: linear-gradient(145deg, #fff59d, #fdd835);
+    cursor: pointer;
+    box-shadow: 0 4px 0 #f9a825, 0 0 15px rgba(255, 235, 59, 0.6);
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .hint-btn:hover {
+    transform: translateY(-2px) rotate(-15deg);
+    box-shadow: 0 6px 0 #f9a825, 0 0 25px rgba(255, 235, 59, 0.9);
+  }
+  .hint-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #f9a825;
+  }
+
+  .feedback {
+    margin-top: 10px;
+    font-size: 1.1em;
+    min-height: 1.4em;
+    font-weight: bold;
+  }
+  .feedback.ok { color: #2e7d32; }
+  .feedback.bad { color: #c62828; }
+  .feedback.hint { color: #ef6c00; }
+
+  /* ПОБЕДА */
+  .win-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 215, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 20;
+    animation: fadeIn 0.5s;
+  }
+  .win-overlay.show { display: flex; }
+  .win-overlay h2 {
+    font-size: 2.6em;
+    color: #b8860b;
+    text-shadow: 3px 3px 0 #fff;
+    animation: bounce 1s infinite alternate;
+    text-align: center;
+    padding: 0 20px;
+  }
+  .win-overlay p { font-size: 1.4em; margin-top: 10px; color: #5a3a1a; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-15px) scale(1.1); }
+  }
+
+  /* СЧЁТЧИК */
+  .counter {
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: #6b4a10;
+    background: #fff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 3px dashed #b8860b;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔑 Золотой ключик 🚪</h1>
+<p class="hint">Реши задачки, чтобы подобрать ключ и открыть дверь!</p>
+
+<div class="scene">
+  <div class="wall"></div>
+
+  <div class="room-behind">🎁</div>
+
+  <div class="door-frame">
+    <div class="door" id="door">
+      <div class="lock"></div>
+    </div>
+  </div>
+
+  <div class="key" id="key">🔑</div>
+
+  <div class="task-box">
+    <div class="task-text" id="taskText">Загрузка...</div>
+    <div class="task-controls">
+      <input type="number" class="task-input" id="taskInput" placeholder="?">
+      <button class="task-btn" id="taskBtn">Ответить</button>
+      <button class="hint-btn" id="hintBtn" title="Подсказка">💡</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="win-overlay" id="winOverlay">
+    <h2>✨ Секретная комната открыта! ✨</h2>
+    <p>Сейчас начнётся новое приключение...</p>
+  </div>
+</div>
+
+<div class="counter" id="counter">Решено задач: 0</div>
+
+<script>
+  // ===== СОСТОЯНИЕ =====
+  const state = {
+    key: 'floor',     // 'floor' | 'hand' | 'lock'
+    door: 'closed',   // 'closed' | 'open'
+    stage: 1,         // 1 — первая задача, 2 — вторая
+    solved: 0
+  };
+
+  // ===== ЗАДАЧИ =====
+  const tasks1 = [
+    { q: 'Сколько будет 5 + 3?', a: 8 },
+    { q: 'Сколько будет 10 − 4?', a: 6 },
+    { q: 'Сколько ушей у двух мышей?', a: 4 },
+    { q: 'Сколько лап у одной кошки?', a: 4 },
+    { q: 'Сколько будет 7 + 2?', a: 9 },
+    { q: 'Сколько пальчиков у одной руки?', a: 5 },
+    { q: 'Сколько будет 9 − 3?', a: 6 }
+  ];
+  const tasks2 = [
+    { q: 'Сколько будет 6 × 2?', a: 12 },
+    { q: 'Сколько дней в неделе?', a: 7 },
+    { q: 'Сколько будет 15 − 7?', a: 8 },
+    { q: 'Сколько месяцев в году?', a: 12 },
+    { q: 'Сколько будет 8 + 9?', a: 17 },
+    { q: 'Сколько будет 4 × 3?', a: 12 },
+    { q: 'Сколько минут в одном часе?', a: 60 }
+  ];
+
+  // ===== ЭЛЕМЕНТЫ =====
+  const keyEl = document.getElementById('key');
+  const doorEl = document.getElementById('door');
+  const taskText = document.getElementById('taskText');
+  const taskInput = document.getElementById('taskInput');
+  const taskBtn = document.getElementById('taskBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  const feedback = document.getElementById('feedback');
+  const counter = document.getElementById('counter');
+  const winOverlay = document.getElementById('winOverlay');
+
+  // ===== ЛОГИКА ЗАДАЧ =====
+  function pickTask(stage) {
+    const pool = stage === 1 ? tasks1 : tasks2;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  let currentTask = null;
+  function showTask() {
+    currentTask = pickTask(state.stage);
+    taskText.textContent = currentTask.q;
+    taskInput.value = '';
+    taskInput.focus();
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+  }
+
+  function checkAnswer() {
+    const val = parseInt(taskInput.value, 10);
+    if (isNaN(val)) {
+      feedback.textContent = '✏️ Введи число!';
+      feedback.className = 'feedback bad';
+      return;
+    }
+
+    if (val === currentTask.a) {
+      // Правильный ответ
+      feedback.textContent = '✅ Правильно!';
+      feedback.className = 'feedback ok';
+      state.solved++;
+      counter.textContent = 'Решено задач: ' + state.solved;
+
+      if (state.stage === 1) {
+        // Поднимаем ключ
+        state.key = 'hand';
+        keyEl.classList.add('lifted');
+        state.stage = 2;
+        setTimeout(showTask, 1200);
+      } else if (state.stage === 2) {
+        // Вставляем ключ и открываем дверь
+        state.key = 'lock';
+        keyEl.classList.remove('lifted');
+        keyEl.classList.add('in-lock');
+        setTimeout(() => {
+          doorEl.classList.add('open');
+          state.door = 'open';
+          // Показываем сообщение о секретной комнате
+          setTimeout(() => {
+            winOverlay.classList.add('show');
+            // Через 3 секунды возвращаем игру в начальное состояние
+            setTimeout(resetGame, 3000);
+          }, 1600);
+        }, 1000);
+      }
+    } else {
+      // Неправильно — по ТЗ: "предложить ещё одну задачу"
+      feedback.textContent = '❌ Неверно. Попробуй другую задачку!';
+      feedback.className = 'feedback bad';
+      setTimeout(showTask, 1400);
+    }
+  }
+
+  // ===== ПОДСКАЗКА 💡 =====
+  function showHint() {
+    if (!currentTask) return;
+    const a = currentTask.a;
+    const low = Math.max(0, a - 2);
+    const high = a + 2;
+    feedback.textContent = `💡 Подсказка: ответ между ${low} и ${high}`;
+    feedback.className = 'feedback hint';
+  }
+
+  // ===== ВОЗВРАТ В НАЧАЛЬНОЕ СОСТОЯНИЕ =====
+  function resetGame() {
+    state.key = 'floor';
+    state.door = 'closed';
+    state.stage = 1;
+
+    keyEl.classList.remove('lifted', 'in-lock');
+    doorEl.classList.remove('open');
+    winOverlay.classList.remove('show');
+
+    // Новая задачка первого уровня
+    showTask();
+  }
+
+  // ===== ОБРАБОТЧИКИ =====
+  taskBtn.addEventListener('click', checkAnswer);
+  hintBtn.addEventListener('click', showHint);
+  taskInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  // Если пользователь кликает по ключу или двери до решения — напомнить про задачу
+  keyEl.addEventListener('click', () => {
+    if (state.key === 'floor') {
+      feedback.textContent = '🤔 Сначала реши задачку, чтобы поднять ключ!';
+      feedback.className = 'feedback bad';
+      taskInput.focus();
+    }
+  });
+  doorEl.addEventListener('click', () => {
+    if (state.door === 'closed' && state.key !== 'lock') {
+      feedback.textContent = '🔒 Дверь заперта! Реши задачку!';
+      feedback.className = 'feedback bad';
+      taskInput.focus();
+    }
+  });
+
+  // ===== СТАРТ =====
+  showTask();
+</script>
+
+</body>
+</html>
